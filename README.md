@@ -1,60 +1,161 @@
-# Flask Microloans API + Postgres (Docker)
+Running the Loan API Locally
 
-Minimal REST API for microloans, built with Flask, SQLAlchemy, Alembic, and PostgreSQL (via Docker Compose).
+Follow these steps to run the application on your machine using Docker & Docker Compose.
 
-## Quick start
+✅ 1. Clone the Repository
+git clone https://github.com/aditirajput18/dummy-branch-app
+cd dummy-branch-app
 
-```bash
-# 1) Build and start services
-docker compose up -d --build
+✅ 2. Generate HTTPS Certificates (Local Only)
 
-# 2) Run DB migrations
-docker compose exec api alembic upgrade head
+The application runs on https://branchloans.com
+ locally.
 
-# 3) Seed dummy data (idempotent)
-docker compose exec api python scripts/seed.py
+mkdir certs
+openssl req -x509 -newkey rsa:4096 -keyout certs/key.pem -out certs/cert.pem -days 365 -nodes -subj "/CN=branchloans.com"
 
-# 4) Hit endpoints
-curl http://localhost:8000/health
-curl http://localhost:8000/api/loans
-```
+✅ 3. Add Local Domain Mapping
 
-## Configuration
+Edit your /etc/hosts (Linux/macOS) or C:\Windows\System32\drivers\etc\hosts:
 
-See `.env.example` for env vars. By default:
-- `DATABASE_URL=postgresql+psycopg2://postgres:postgres@db:5432/microloans`
-- API listens on `localhost:8000`.
+127.0.0.1   branchloans.com
 
-## API
+✅ 4. Run the Application
 
-- GET `/health` → `{ "status": "ok" }`
-- GET `/api/loans` → list all loans
-- GET `/api/loans/:id` → get loan by id
-- POST `/api/loans` → create loan (status defaults to `pending`)
+Choose your environment:
 
-Example create:
-```bash
-curl -X POST http://localhost:8000/api/loans \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "borrower_id": "usr_india_999",
-    "amount": 12000.50,
-    "currency": "INR",
-    "term_months": 6,
-    "interest_rate_apr": 24.0
-  }'
-```
+Development
+ENV=dev docker compose up --build
 
-- GET `/api/stats` → aggregate stats: totals, avg, grouped by status/currency.
+Staging
+ENV=staging docker compose up --build -d
 
-## Development
+Production
+ENV=prod docker compose up --build -d
 
-- App entrypoint: `wsgi.py` (`wsgi:app`)
-- Flask app factory: `app/__init__.py`
-- Models: `app/models.py`
-- Migrations: `alembic/`
+🌐 Local URLs
+Purpose	URL
+Health Check	https://branchloans.com/health
 
-## Notes
+List Loans	https://branchloans.com/api/loans
 
-- Amounts are validated server-side (0 < amount ≤ 50000).
-- No authentication for this prototype.
+Stats	https://branchloans.com/api/stats
+🔄 Switching Between Environments
+
+The environment is controlled by:
+
+ENV=<env_name>
+
+
+Valid values:
+
+dev
+
+staging
+
+prod
+
+Your compose file will automatically load:
+
+env/.env.dev
+env/.env.staging
+env/.env.prod
+
+
+This changes:
+
+Logging level
+
+Database name & credentials
+
+Flask mode
+
+Resource usage
+
+Behavior & performance
+
+Example:
+
+ENV=prod docker compose up --build -d
+
+🔧 Environment Variables (Explained)
+
+Below is what each variable in your .env.* files means:
+
+Variable	Description
+ENV	Defines current environment (dev/staging/prod)
+POSTGRES_DB	Database name used by PostgreSQL
+POSTGRES_USER	Username for PostgreSQL
+POSTGRES_PASSWORD	Password for the database
+DATABASE_URL	Complete SQLAlchemy connection string
+FLASK_ENV	Flask runtime mode (development/production)
+LOG_LEVEL	Logging level (DEBUG / INFO / WARNING)
+
+Example:
+
+DATABASE_URL=postgresql://postgres:devpass@db:5432/loans_dev
+
+🚀 CI/CD Pipeline (GitHub Actions)
+
+Every push to main runs the full CI/CD pipeline:
+
+1️⃣ Test Stage
+
+Installs dependencies
+
+Runs Python tests with pytest
+
+If tests fail → pipeline stops
+
+2️⃣ Build Stage
+
+Builds Docker image using the repo source code
+
+Tags image using the commit SHA
+
+3️⃣ Security Scan (Trivy)
+
+Scans Docker image for vulnerabilities
+
+If CRITICAL issues are found → pipeline fails
+
+4️⃣ Push Stage
+
+Pushes Docker image to GitHub Container Registry (GHCR)
+
+Only happens when pushing to the main branch
+
+Pull Requests do NOT push images
+
+🔐 Secrets Managed Securely
+
+No secrets exist in code.
+Sensitive credentials (if any) should be stored in:
+
+GitHub → Settings → Secrets → Actions
+🏗 Architecture Diagram (ASCII)
+                ┌──────────────────────────┐
+                │      GitHub Actions       │
+                │  (CI/CD: Test → Build →  │
+                │   Scan → Push Image)     │
+                └─────────────┬────────────┘
+                              │
+                              ▼
+                  Docker Image (GHCR)
+                              │
+               ┌──────────────┴──────────────┐
+               │                               │
+        ┌──────▼───────┐                 ┌────▼────────┐
+        │   Loan API    │  HTTPS :443     │ PostgreSQL  │
+        │ (Flask + Gunicorn)──────────────▶│   Database  │
+        │     Docker     │                 └─────────────┘
+        └───────────────┘
+               ▲
+               │
+               │ Local Host Mapping
+               │ 127.0.0.1 → branchloans.com
+               │
+        ┌──────┴────────┐
+        │   Browser      │
+        │ https://branchloans.com │
+        └────────────────┘
