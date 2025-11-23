@@ -1,33 +1,43 @@
-services:
-  db:
-    image: postgres:16
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: microloans
-    ports:
-      - "5432:5432"
-    volumes:
-      - db_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d microloans"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+version: "3.9"
 
-  api:
+services:
+  web:
     build: .
-    environment:
-      FLASK_ENV: development
-      DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/microloans
-      PORT: 8000
-      PYTHONPATH: /app
+    container_name: loan-api
+    entrypoint: ["/app/docker-entrypoint.sh"]
+    env_file:
+      - ./env/.env.${ENV}
+    volumes:
+      - .:/app:delegated             # for dev hot reload
+      - ./certs:/certs:ro            # SSL certs
+    ports:
+      - "443:443"                    # HTTPS
+      - "8000:8000"                  # fallback HTTP
     depends_on:
       db:
         condition: service_healthy
-    ports:
-      - "8000:8000"
-    command: gunicorn -w 2 -b 0.0.0.0:8000 wsgi:app
+    networks:
+      - branch-net
+    restart: unless-stopped
+
+  db:
+    image: postgres:15
+    container_name: loan-db
+    env_file:
+      - ./env/.env.${ENV}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - branch-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+networks:
+  branch-net:
 
 volumes:
-  db_data:
+  postgres_data:
