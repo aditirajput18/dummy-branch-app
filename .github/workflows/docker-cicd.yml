@@ -56,14 +56,9 @@ jobs:
         run: echo "TAG=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
 
       - name: Build Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile
-          push: false
-          tags: |
-            ghcr.io/${{ github.repository }}/loan-api:${{ steps.vars.outputs.TAG }}
-            ghcr.io/${{ github.repository }}/loan-api:latest
+        run: |
+          docker build -t loan-api:latest -t loan-api:${GITHUB_SHA::7} .
+
 
 
   security_scan:
@@ -79,7 +74,7 @@ jobs:
         uses: aquasecurity/trivy-action@0.20.0
         with:
           scan-type: image
-          image-ref: ghcr.io/${{ github.repository }}/loan-api:latest
+          image-ref: loan-api:latest
           vuln-type: os,library
           severity: CRITICAL
           ignore-unfixed: true
