@@ -2,45 +2,55 @@
 
 Follow these steps to run the application on your machine using Docker & Docker Compose.
 
-✅ 1. Clone the Repository
+###✅ 1. Clone the Repository
 git clone https://github.com/aditirajput18/dummy-branch-app
+
 cd dummy-branch-app
 
-✅ 2. Generate HTTPS Certificates (Local Only)
+###✅ 2. Generate HTTPS Certificates (Local Only)
 
 The application runs on https://branchloans.com
  locally.
 
 mkdir certs
+
 openssl req -x509 -newkey rsa:4096 -keyout certs/key.pem -out certs/cert.pem -days 365 -nodes -subj "/CN=branchloans.com"
 
-✅ 3. Add Local Domain Mapping
+###✅ 3. Add Local Domain Mapping
 
 Edit your /etc/hosts (Linux/macOS) or C:\Windows\System32\drivers\etc\hosts:
 
-127.0.0.1   branchloans.com
 
-✅ 4. Run the Application
+127.0.0.1 
+
+branchloans.com
+
+###✅ 4. Run the Application
 
 Choose your environment:
 
 Development
+
 ENV=dev docker compose up --build
 
 Staging
+
 ENV=staging docker compose up --build -d
 
 Production
+
 ENV=prod docker compose up --build -d
 
-🌐 Local URLs
+###🌐 Local URLs
 Purpose	URL
+
 Health Check	https://branchloans.com/health
 
 List Loans	https://branchloans.com/api/loans
 
 Stats	https://branchloans.com/api/stats
-🔄 Switching Between Environments
+
+###🔄 Switching Between Environments
 
 The environment is controlled by:
 
@@ -58,11 +68,13 @@ prod
 Your compose file will automatically load:
 
 env/.env.dev
+
 env/.env.staging
+
 env/.env.prod
 
 
-This changes:
+###This changes:
 
 Logging level
 
@@ -78,7 +90,7 @@ Example:
 
 ENV=prod docker compose up --build -d
 
-🔧 Environment Variables (Explained)
+##🔧 Environment Variables (Explained)
 
 Below is what each variable in your .env.* files means:
 
@@ -95,11 +107,11 @@ Example:
 
 DATABASE_URL=postgresql://postgres:devpass@db:5432/loans_dev
 
-🚀 CI/CD Pipeline (GitHub Actions)
+##🚀 CI/CD Pipeline (GitHub Actions)
 
 Every push to main runs the full CI/CD pipeline:
 
-1️⃣ Test Stage
+###1️⃣ Test Stage
 
 Installs dependencies
 
@@ -107,19 +119,19 @@ Runs Python tests with pytest
 
 If tests fail → pipeline stops
 
-2️⃣ Build Stage
+###2️⃣ Build Stage
 
 Builds Docker image using the repo source code
 
 Tags image using the commit SHA
 
-3️⃣ Security Scan (Trivy)
+###3️⃣ Security Scan (Trivy)
 
 Scans Docker image for vulnerabilities
 
 If CRITICAL issues are found → pipeline fails
 
-4️⃣ Push Stage
+###4️⃣ Push Stage
 
 Pushes Docker image to GitHub Container Registry (GHCR)
 
@@ -127,13 +139,15 @@ Only happens when pushing to the main branch
 
 Pull Requests do NOT push images
 
-🔐 Secrets Managed Securely
+##🔐 Secrets Managed Securely
 
 No secrets exist in code.
+
 Sensitive credentials (if any) should be stored in:
 
 GitHub → Settings → Secrets → Actions
-🏗 Architecture Diagram (ASCII)
+
+##🏗 Architecture Diagram (ASCII)
                 ┌──────────────────────────┐
                 │      GitHub Actions       │
                 │  (CI/CD: Test → Build →  │
