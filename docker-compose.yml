@@ -1,43 +1,33 @@
 version: "3.9"
 
 services:
-  web:
+  api:
     build: .
     container_name: loan-api
-    entrypoint: ["/app/docker-entrypoint.sh"]
-    env_file:
-      - ./env/.env.${ENV}
-    volumes:
-      - .:/app:delegated             # for dev hot reload
-      - ./certs:/certs:ro            # SSL certs
-    ports:
-      - "443:443"                    # HTTPS
-      - "8000:8000"                  # fallback HTTP
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER}
+      DB_PASS: ${POSTGRES_PASSWORD}
+      DB_NAME: ${POSTGRES_DB}
+      LOG_LEVEL: ${LOG_LEVEL}  # dynamic per environment
     depends_on:
-      db:
-        condition: service_healthy
+      - postgres
     networks:
       - branch-net
-    restart: unless-stopped
 
-  db:
+  postgres:
     image: postgres:15
-    container_name: loan-db
-    env_file:
-      - ./env/.env.${ENV}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+    container_name: branch-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     networks:
       - branch-net
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-    restart: unless-stopped
 
 networks:
   branch-net:
 
 volumes:
-  postgres_data:
+  postgres-data:
