@@ -1,4 +1,4 @@
-## Running the Loan API Locally
+## Running the Loan API Locally!
 
 Follow these steps to run the application on your machine using Docker & Docker Compose.
 
